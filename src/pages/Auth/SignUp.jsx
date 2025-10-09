@@ -4,6 +4,8 @@ import AuthLayout from "../../components/layouts/AuthLayout";
 import { validateEmail } from "../../utils/helper";
 import ProfilePhotoSelector from "../../components/Inputs/ProfilePhotoSelector";
 import Input from "../../components/Inputs/Input";
+import axiosInstance from "../../utils/axiosInstance";
+import { API_PATHS } from "../../utils/apiPaths";
 
 const SignUp = () => {
   const [profilePic, setProfilePic] = useState(null);
@@ -33,6 +35,26 @@ const SignUp = () => {
     }
 
     //  signup logic (API call can be integrated here)
+    try {
+      const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+        name: fullName,
+        email,
+        password,
+        adminInviteToken,
+      });
+      const { token, role } = response.data;
+      if (token) {
+        localStorage.setItem("token", token);
+        updateUser(response.data)
+        // Redirect based on role
+      }
+    } catch (error) {
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("Something went wrong. Please try again later.");
+      }
+    }
   };
 
   return (
