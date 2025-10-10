@@ -1,11 +1,13 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/layouts/AuthLayout";
 import { validateEmail } from "../../utils/helper";
 import ProfilePhotoSelector from "../../components/Inputs/ProfilePhotoSelector";
 import Input from "../../components/Inputs/Input";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
+import { UserContext } from "../../context/userContext";
+import { uploadImage } from "../../utils/uploadImage";
 
 const SignUp = () => {
   const [profilePic, setProfilePic] = useState(null);
@@ -14,10 +16,12 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [adminInviteToken, setAdminInviteToken] = useState("");
   const [error, setError] = useState(null);
-
+  const { updateUser } = useContext(UserContext);
+  const navigate = useNavigate();
   const handleSignUp = async (e) => {
     e.preventDefault();
     setError("");
+    let profileImageUrl = "";
 
     if (!fullName.trim()) {
       setError("Please enter your full name.");
@@ -34,19 +38,32 @@ const SignUp = () => {
       return;
     }
 
+    
+
     //  signup logic (API call can be integrated here)
     try {
+      // Upload image if present
+      if (profilePic) {
+        const imageUploadRes = await uploadImage(profilePic);
+        profileImageUrl = imageUploadRes.imageUrl || "";
+      }
       const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
         name: fullName,
         email,
         password,
+        profileImageUrl,
         adminInviteToken,
       });
       const { token, role } = response.data;
       if (token) {
         localStorage.setItem("token", token);
-        updateUser(response.data)
+        updateUser(response.data);
         // Redirect based on role
+        if (role === "admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/user/dashboard");
+        }
       }
     } catch (error) {
       if (error.response?.data?.message) {
