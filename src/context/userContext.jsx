@@ -3,17 +3,32 @@ import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 
 //  Create a new User Context
-export const UserContext = createContext(null);
+export const UserContext = createContext();
 
 const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  //  Clear user data and remove authentication token
-  const clearUser = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-  };
+  useEffect(() => {
+    if (user) return;
+    const accessToken = localStorage.getItem("token");
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
+    const fetchUser = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE);
+        setUser(response.data);
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error);
+        clearUser();
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
 
   //  Update user data and save token to localStorage
   const updateUser = (userData) => {
@@ -24,28 +39,11 @@ const UserProvider = ({ children }) => {
     setLoading(false);
   };
 
-  //  Fetch the authenticated user's profile
-  const fetchUserProfile = async () => {
-    try {
-      const response = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE);
-      setUser(response.data);
-    } catch (error) {
-      console.error("Failed to fetch user profile:", error);
-      clearUser();
-    } finally {
-      setLoading(false);
-    }
+  //  Clear user data and remove authentication token
+  const clearUser = () => {
+    setUser(null);
+    localStorage.removeItem("token");
   };
-
-  useEffect(() => {
-    if (user) return;
-    const accessToken = localStorage.getItem("token");
-    if (!accessToken) {
-      setLoading(false);
-      return;
-    }
-    fetchUserProfile();
-  }, []);
 
   //  Provide the context values globally
   return (

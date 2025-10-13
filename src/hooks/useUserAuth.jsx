@@ -8,7 +8,9 @@ export const useUserAuth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (loading) return; // Wait until user loading state finishes
+    if (loading) return;
+
+    if (user) return;
 
     if (!user) {
       clearUser();
