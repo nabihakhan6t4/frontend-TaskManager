@@ -6,9 +6,7 @@ import SideMenu from "./SideMenu";
 const DashboardLayout = ({ children, activeMenu }) => {
   const { user } = useContext(UserContext);
 
-  if (!user) {
-    return <div>Please log in to view the dashboard. 🚫</div>;
-  }
+
 
   return (
     <div className="">
