@@ -22,7 +22,11 @@ const SelectDropdown = ({ options, value, onChange, placeholder }) => {
         <span className="mt-2 ">
           {" "}
           {isOpen ? (
-            <LuChevronDown classNarotate-180ne="" />
+            <LuChevronDown
+              className={`${
+                isOpen ? "rotate-180" : "rotate-0"
+              } transition-transform duration-300`}
+            />
           ) : (
             <LuChevronDown />
           )}{" "}

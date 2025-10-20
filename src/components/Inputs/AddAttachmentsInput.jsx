@@ -1,36 +1,32 @@
 import React, { useState } from "react";
 import { HiMiniPlus, HiOutlineTrash } from "react-icons/hi2";
-
-const TodoListInput = ({ todoList, setTodoList }) => {
+import { LuPaperclip } from "react-icons/lu";
+const AddAttachmentsInput = ({ attachments, setAttachments }) => {
   const [option, setOption] = useState("");
-
   // Function to handle adding an option
   const handleAddOption = () => {
     if (option.trim()) {
-      setTodoList([...todoList, option.trim()]);
+      setAttachments([...attachments, option.trim()]);
       setOption("");
     }
   };
 
   // Function to handle deleting an option
   const handleDeleteOption = (index) => {
-    const updatedArr = todoList.filter((_, idx) => idx !== index);
-    setTodoList(updatedArr);
+    const updatedArr = attachments.filter((_, idx) => idx !== index);
+    setAttachments(updatedArr);
   };
-
   return (
     <div>
-      {todoList.map((item, index) => (
+      {attachments.map((item, index) => (
         <div
           key={item}
           className="flex justify-between bg-gray-50 border border-gray-100 px-3 py-2 rounded-md mb-3 mt-2"
         >
-          <p className="text-xs text-black ">
-            <span className="text-xs text-gray-400 font-semibold mr-2 ">
-              {index < 9 ? `0${index + 1}` : index + 1}
-            </span>
-            {item}
-          </p>
+          <div className="flex-1 flex items-center gap-3 border border-gray-100 ">
+            <LuPaperclip className="text-gray-400" />
+            <p className="text-xs text-black">{item}</p>
+          </div>
           <button
             className="cursor-pointer"
             onClick={() => {
@@ -43,15 +39,18 @@ const TodoListInput = ({ todoList, setTodoList }) => {
       ))}
 
       <div className="flex items-center gap-5 mt-4 ">
-        <input
-          type="text"
-          placeholder="Enter Task"
-          value={option}
-          onChange={({ target }) => {
-            setOption(target.value);
-          }}
-          className="w-full text-[13px] text-black outline-none  border border-gray-100 px-3 py-2 rounded-md"
-        />
+        <div className="flex-1 flex items-center gap-3 border border-gray-100 rounded-md px-3">
+          <LuPaperclip className="text-gray-400" />
+          <input
+            type="text"
+            placeholder="Add File Link"
+            value={option}
+            onChange={({ target }) => {
+              setOption(target.value);
+            }}
+            className="w-full text-[13px] text-black outline-none  border border-gray-100 py-3"
+          />
+        </div>
         <button className="card-btn text-nowrap" onClick={handleAddOption}>
           <HiMiniPlus className="text-lg" /> Add
         </button>
@@ -60,4 +59,4 @@ const TodoListInput = ({ todoList, setTodoList }) => {
   );
 };
 
-export default TodoListInput;
+export default AddAttachmentsInput;

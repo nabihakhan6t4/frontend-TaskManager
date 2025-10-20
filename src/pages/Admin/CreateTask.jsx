@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { PRIORITY_DATA } from "../../utils/data";
-import axiosInstance from "../../utils/axiosInstance";
-import { API_PATHS } from "../../utils/apiPaths";
-import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import moment from "moment";
 import { LuTrash2 } from "react-icons/lu";
 import SelectDropdown from "../../components/Inputs/SelectDropdown";
 import SelectUsers from "../../components/Inputs/SelectUsers";
 import TodoListInput from "../../components/Inputs/TodoListInput";
-
+import AddAttachmentsInput from "../../components/Inputs/AddAttachmentsInput";
+import axiosInstance from "../../utils/axiosInstance";
+import { API_PATHS } from "../../utils/apiPaths";
+import { toast } from "react-hot-toast";
 const CreateTask = () => {
   const location = useLocation();
   const { taskId } = location.state || {};
@@ -20,7 +20,7 @@ const CreateTask = () => {
     title: "",
     description: "",
     priority: "Low",
-    dueDate: "",
+    dueDates: "",
     assignedTo: [],
     todoChecklist: [],
     attachments: [],
@@ -52,36 +52,38 @@ const CreateTask = () => {
 
   // Create Task
   const createTask = async () => {
-    if (!taskData.title || !taskData.description || !taskData.dueDate) {
-      toast.error("Please fill all required fields!");
-      return;
-    }
+    setLoading(true);
+
     try {
-      setLoading(true);
-      const { data } = await axiosInstance.post(
-        API_PATHS.CREATE_TASK,
-        taskData
-      );
-      toast.success("Task created successfully 🎉");
+      const todolist = taskData.todoChecklist?.map((item) => ({
+        text: item,
+        completed: false,
+      })); // 🛑 FRONTEND FIX: taskData state mein 'dueDate' hai, lekin server 'dueDates' expect kar raha hai.
+
+      const response = await axiosInstance.post(API_PATHS.TASKS.CREATE_TASK, {
+        ...taskData, // title, description, priority, assignedTo, attachments // Yahan hum 'dueDate' ko overwrite kar rahe hain 'dueDates' se
+        dueDates: new Date(taskData.dueDate).toISOString(), // ✅
+        todoChecklist: todolist,
+      });
+
+      toast.success("Task Created Successfully");
       clearData();
-      navigate("/dashboard/tasks");
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to create task 😞");
+    } catch (error) {
+      console.error("Error creating task:", error);
+      setLoading(false);
     } finally {
       setLoading(false);
     }
   };
-
   // Update Task
   const updateTask = async () => {
     if (!taskId) return;
     try {
       setLoading(true);
       await axiosInstance.put(`${API_PATHS.UPDATE_TASK}/${taskId}`, taskData);
-      toast.success("Task updated successfully ✨");
+
       navigate("/dashboard/tasks");
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to update task 😔");
     } finally {
       setLoading(false);
     }
@@ -89,7 +91,40 @@ const CreateTask = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    taskId ? updateTask() : createTask();
+
+    setError(null);
+
+    //  Input validation
+    if (!taskData.title.trim()) {
+      setError("Task title is required!");
+      return;
+    }
+
+    if (!taskData.description.trim()) {
+      setError("Task description is required!");
+      return;
+    }
+
+    if (!taskData.dueDate) {
+      setError("Due date is required!");
+      return;
+    }
+
+    if (!taskData.assignedTo || taskData.assignedTo.length === 0) {
+      setError("At least one user must be assigned!");
+      return;
+    }
+
+    if (!taskData.todoChecklist || taskData.todoChecklist.length === 0) {
+      setError("Add at least one item to the TODO checklist!");
+      return;
+    }
+
+    if (taskId) {
+      updateTask();
+      return;
+    }
+    createTask();
   };
 
   // get Task info by ID
@@ -110,11 +145,15 @@ const CreateTask = () => {
         attachments: data.attachments || [],
       });
     } catch (err) {
-      toast.error("Failed to fetch task details ⚠️");
     } finally {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    if (taskId) {
+      getTaskDetails();
+    }
+  }, [taskId]);
 
   // Delete Task
   const deleteTask = async () => {
@@ -122,10 +161,9 @@ const CreateTask = () => {
     try {
       setLoading(true);
       await axiosInstance.delete(`${API_PATHS.DELETE_TASK}/${taskId}`);
-      toast.success("Task deleted successfully 🗑️");
+
       navigate("/dashboard/tasks");
     } catch (err) {
-      toast.error("Failed to delete task ❌");
     } finally {
       setLoading(false);
       setOpenDeleteAlert(false);
@@ -169,7 +207,7 @@ const CreateTask = () => {
 
             <div className="mt-3">
               <label className="text-xs font-medium text-slate-600">
-                Task Title
+                Task Description
               </label>
               <textarea
                 placeholder="Describe task"
@@ -202,7 +240,7 @@ const CreateTask = () => {
                   Due Date
                 </label>
                 <input
-                  placeholder="Create App UI "
+                  placeholder="Select due date"
                   className="form-input"
                   value={taskData.dueDate}
                   onChange={({ target }) =>
@@ -224,12 +262,41 @@ const CreateTask = () => {
               </div>
             </div>
 
-            <div className="mt-3 "> 
-              <label className="text-sm font-medium text-slate-600 ">TODO Checklist</label>
-              <TodoListInput todoList={taskData?.todoChecklist} setTodoList={(value)=>{
-                handleValueChange("todoChecklist",value)
-              }}/>
+            <div className="mt-3 ">
+              <label className="text-sm font-medium text-slate-600 ">
+                TODO Checklist
+              </label>
+              <TodoListInput
+                todoList={taskData?.todoChecklist}
+                setTodoList={(value) => {
+                  handleValueChange("todoChecklist", value);
+                }}
+              />
+            </div>
 
+            <div className="mt-3">
+              <label className="text-xs font-medium text-slate-600 ">
+                Add Attachments
+              </label>
+              <AddAttachmentsInput
+                attachments={taskData?.attachments}
+                setAttachments={(value) =>
+                  handleValueChange("attachments", value)
+                }
+              />
+            </div>
+            {error && (
+              <p className="text-xs font-medium text-red-500 mt-5">{error}</p>
+            )}
+
+            <div className="flex justify-end mt-7 ">
+              <button
+                className="add-btn"
+                onClick={handleSubmit}
+                disabled={loading}
+              >
+                {taskId ? "UPDATE TASK" : "CREATE TASK"}
+              </button>
             </div>
           </div>
         </div>

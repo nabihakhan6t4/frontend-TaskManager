@@ -18,6 +18,7 @@ import MyTasks from "./pages/User/MyTasks";
 import ViewTaskDetails from "./pages/User/ViewTaskDetails";
 import PrivateRoute from "./routes/PrivateRoute";
 import UserProvider, { UserContext } from "./context/userContext";
+import { Toaster } from "react-hot-toast";
 
 const App = () => {
   return (
@@ -52,6 +53,41 @@ const App = () => {
           </Routes>
         </Router>
       </div>
+
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          className: "",
+          style: {
+            fontSize: "13px",
+          },
+
+          // Success toast ✅
+          success: {
+            style: {
+              background: "#22c55e",
+              color: "#fff",
+            },
+            iconTheme: {
+              primary: "#fff",
+              secondary: "#22c55e",
+            },
+          },
+
+          // Error toast ❌
+          error: {
+            style: {
+              background: "#ef4444",
+              color: "#fff",
+            },
+            iconTheme: {
+              primary: "#fff",
+              secondary: "#ef4444",
+            },
+          },
+        }}
+      />
     </UserProvider>
   );
 };

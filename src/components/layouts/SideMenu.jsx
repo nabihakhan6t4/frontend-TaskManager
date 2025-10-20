@@ -7,7 +7,6 @@ const SideMenu = ({ activeMenu }) => {
   const { user, clearUser } = useContext(UserContext);
   const [sideMenuData, setSideMenuData] = useState([]);
   const navigate = useNavigate();
-  console.log("Admin User Data in SideMenu:", user);
 
   // Handle Menu Click
   const handleClick = (route) => {
