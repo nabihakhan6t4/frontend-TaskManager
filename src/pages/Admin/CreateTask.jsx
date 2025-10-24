@@ -11,6 +11,8 @@ import AddAttachmentsInput from "../../components/Inputs/AddAttachmentsInput";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import { toast } from "react-hot-toast";
+import Modal from "../../components/Modal";
+import DeleteAlert from "../../components/DeleteAlert";
 const CreateTask = () => {
   const location = useLocation();
   const { taskId } = location.state || {};
@@ -20,7 +22,7 @@ const CreateTask = () => {
     title: "",
     description: "",
     priority: "Low",
-    dueDates: "",
+    dueDate: "",
     assignedTo: [],
     todoChecklist: [],
     attachments: [],
@@ -58,11 +60,11 @@ const CreateTask = () => {
       const todolist = taskData.todoChecklist?.map((item) => ({
         text: item,
         completed: false,
-      })); // 🛑 FRONTEND FIX: taskData state mein 'dueDate' hai, lekin server 'dueDates' expect kar raha hai.
+      }));
 
       const response = await axiosInstance.post(API_PATHS.TASKS.CREATE_TASK, {
-        ...taskData, // title, description, priority, assignedTo, attachments // Yahan hum 'dueDate' ko overwrite kar rahe hain 'dueDates' se
-        dueDates: new Date(taskData.dueDate).toISOString(), // ✅
+        ...taskData,
+        dueDate: new Date(taskData.dueDate).toISOString(),
         todoChecklist: todolist,
       });
 
@@ -77,13 +79,28 @@ const CreateTask = () => {
   };
   // Update Task
   const updateTask = async () => {
-    if (!taskId) return;
+    setLoading(true);
     try {
-      setLoading(true);
-      await axiosInstance.put(`${API_PATHS.UPDATE_TASK}/${taskId}`, taskData);
-
-      navigate("/dashboard/tasks");
+      const todoList = taskData.todoChecklist?.map((item) => {
+        const prevtodoChecklist = currentTask?.todoChecklist || [];
+        const matchedTask = prevtodoChecklist.find((task) => task.text == item);
+        return {
+          text: item,
+          completed: matchedTask ? matchedTask.completed : false,
+        };
+      });
+      const response = await axiosInstance.put(
+        API_PATHS.TASKS.UPDATE_TASK(taskId),
+        {
+          ...taskData,
+          dueDate: new Date(taskData.dueDate).toISOString(),
+          todoChecklist: todoList,
+        }
+      );
+      toast.success("Task Updated Successfully");
     } catch (err) {
+      console.error("error updating tasks", err);
+      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -128,45 +145,50 @@ const CreateTask = () => {
   };
 
   // get Task info by ID
-  const getTaskDetails = async () => {
-    if (!taskId) return;
+  const getTaskDetailsById = async () => {
     try {
-      setLoading(true);
-      const { data } = await axiosInstance.get(
-        `${API_PATHS.GET_TASK_BY_ID}/${taskId}`
+      const response = await axiosInstance.get(
+        API_PATHS.TASKS.GET_TASK_BY_ID(taskId)
       );
-      setTaskData({
-        title: data.title,
-        description: data.description,
-        priority: data.priority,
-        dueDate: moment(data.dueDate).format("YYYY-MM-DD"),
-        assignedTo: data.assignedTo || [],
-        todoChecklist: data.todoChecklist || [],
-        attachments: data.attachments || [],
-      });
+      if (response.data) {
+        const taskInfo = response.data;
+        setCurrentTask(taskInfo);
+        setTaskData({
+          title: taskInfo.title,
+          description: taskInfo.description,
+          priority: taskInfo.priority,
+          dueDate: taskInfo.dueDate
+            ? moment(taskInfo.dueDate).format("YYYY-MM-DD")
+            : "",
+          assignedTo: taskInfo?.assignedTo?.map((item) => item?._id) || [],
+          todoChecklist:
+            taskInfo?.todoChecklist?.map((item) => item?.text) || [],
+          attachments: taskInfo?.attachments || [],
+        });
+      }
     } catch (err) {
+      console.error("Error Fetching Users:".err);
     } finally {
       setLoading(false);
     }
   };
   useEffect(() => {
     if (taskId) {
-      getTaskDetails();
+      getTaskDetailsById(taskId);
     }
+    return () => {};
   }, [taskId]);
 
   // Delete Task
   const deleteTask = async () => {
-    if (!taskId) return;
     try {
-      setLoading(true);
-      await axiosInstance.delete(`${API_PATHS.DELETE_TASK}/${taskId}`);
-
-      navigate("/dashboard/tasks");
-    } catch (err) {
-    } finally {
-      setLoading(false);
+      await axiosInstance.delete(API_PATHS.TASKS.DELETE_TASK(taskId));
       setOpenDeleteAlert(false);
+      toast.success("Task Deleted Successfully");
+      navigate("/admin/tasks");
+    } catch (err) {
+      console.error("Error Deleting expenses:", err);
+      err.response?.data?.message || err.message;
     }
   };
 
@@ -182,7 +204,7 @@ const CreateTask = () => {
               </h2>
               {taskId && (
                 <button
-                  className="flex items-center gap-1.5 text-[13px] font-medium font-rose-500 bg-rose-50 rounded px-2 py-1 border border-rose-100 hover:border-rose-300  cursor-pointer "
+                  className="flex items-center gap-1.5 text-[13px] font-medium text-rose-500 bg-rose-50 rounded px-2 py-1 border border-rose-100 hover:border-rose-300  cursor-pointer "
                   onClick={() => setOpenDeleteAlert(true)}
                 >
                   {" "}
@@ -301,6 +323,19 @@ const CreateTask = () => {
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={openDeleteAlert}
+        onClick={() => {
+          setOpenDeleteAlert(false);
+        }}
+        title="Delete Task"
+      >
+        <DeleteAlert
+          content="Are you sure you want to delete this task?"
+          onDelete={() => deleteTask()}
+        />
+      </Modal>
     </DashboardLayout>
   );
 };

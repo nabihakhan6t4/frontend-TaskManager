@@ -20,20 +20,18 @@ const AddAttachmentsInput = ({ attachments, setAttachments }) => {
     <div>
       {attachments.map((item, index) => (
         <div
-          key={item}
-          className="flex justify-between bg-gray-50 border border-gray-100 px-3 py-2 rounded-md mb-3 mt-2"
+          key={index}
+          className="flex justify-between items-center bg-white shadow-sm border border-gray-200 px-3 py-2 rounded-md mb-2"
         >
-          <div className="flex-1 flex items-center gap-3 border border-gray-100 ">
-            <LuPaperclip className="text-gray-400" />
-            <p className="text-xs text-black">{item}</p>
+          <div className="flex items-center gap-2">
+            <LuPaperclip className="text-gray-500" />
+            <p className="text-sm text-gray-800 break-all">{item}</p>
           </div>
           <button
-            className="cursor-pointer"
-            onClick={() => {
-              handleDeleteOption(index);
-            }}
+            className="hover:bg-red-100 rounded-md p-1"
+            onClick={() => handleDeleteOption(index)}
           >
-            <HiOutlineTrash className="text-lg text-red-500 " />
+            <HiOutlineTrash className="text-lg text-red-500" />
           </button>
         </div>
       ))}
