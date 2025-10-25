@@ -1,6 +1,6 @@
 import "./index.css";
 import {
-  HashRouter as Router,
+  BrowserRouter  as Router,
   Routes,
   Route,
   Navigate,
@@ -24,7 +24,7 @@ const App = () => {
   return (
     <UserProvider>
       <div>
-        <Router>
+        <Router >
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />

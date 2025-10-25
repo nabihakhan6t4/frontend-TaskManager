@@ -49,6 +49,8 @@ const ViewTaskDetails = () => {
             todoCheckList,
           }
         );
+        console.log(todoCheckList);
+        
 
         if (response.status === 200) {
           console.log(response.data);
